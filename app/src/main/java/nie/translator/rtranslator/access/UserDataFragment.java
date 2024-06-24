@@ -40,6 +40,7 @@ import java.util.ArrayList;
 import nie.translator.rtranslator.Global;
 import nie.translator.rtranslator.R;
 import nie.translator.rtranslator.bluetooth.tools.BluetoothTools;
+import nie.translator.rtranslator.tools.FileTools;
 
 
 public class UserDataFragment extends Fragment {
@@ -52,7 +53,19 @@ public class UserDataFragment extends Fragment {
     private AccessActivity activity;
     private Global global;
     private GalleryImageSelector userImageContainer;
-
+    
+    public static final String[] DOWNLOAD_NAMES = {
+            "NLLB_cache_initializer.onnx",
+            "NLLB_decoder.onnx",
+            "NLLB_embed_and_lm_head.onnx",
+            "NLLB_encoder.onnx",
+            "Whisper_cache_initializer.onnx",
+            "Whisper_cache_initializer_batch.onnx",
+            "Whisper_decoder.onnx",
+            "Whisper_detokenizer.onnx",
+            "Whisper_encoder.onnx",
+            "Whisper_initializer.onnx"
+    };
 
     public UserDataFragment() {
         // Required empty public constructor
@@ -113,9 +126,10 @@ public class UserDataFragment extends Fragment {
                     error = true;
                     showAgeTermsError();
                 }*/
-                if (!privacyTerms.isChecked() && !error) {
-                    error = true;
-                    showPrivacyTermsError();
+                if (privacyTerms.isChecked() && !error) {
+                    //error = true;
+                    //showPrivacyTermsError();
+                    importLocalData();
                 }
                 if (!error) {
                     //save name
@@ -136,6 +150,72 @@ public class UserDataFragment extends Fragment {
         });
     }
 
+    private void importLocalData() {
+	    moveDataFile();
+        //editor = sharedPreferences.edit();
+        //editor.putLong("currentDownloadId", -2);
+        //editor.apply();
+	}
+    private void moveDataFile(){
+        SharedPreferences sharedPreferences = global.getSharedPreferences("default", Context.MODE_PRIVATE);
+//        String lastTransferFailure = sharedPreferences.getString("lastTransferFailure", "");
+//        if(lastTransferFailure.length()>0){
+            //we find the index of the lastDownloadSuccess
+        int nameIndex = -1;
+        for (int i = 0; i < DOWNLOAD_NAMES.length; i++) {
+	        nameIndex=i;
+                //we restart the transfer
+                File from = new File(global.getExternalFilesDir(null) + "/" + DOWNLOAD_NAMES[nameIndex]);
+                File to = new File(global.getFilesDir() + "/" + DOWNLOAD_NAMES[nameIndex]);
+                int finalNameIndex = nameIndex;
+                FileTools.moveFile(from, to, new FileTools.MoveFileCallback() {
+                    @Override
+                    public void onSuccess() {
+                        //we save the success of the transfer
+                        SharedPreferences.Editor editor = sharedPreferences.edit();
+                        editor.putString("lastTransferSuccess", DOWNLOAD_NAMES[finalNameIndex]);
+                        editor.apply();
+
+                        if (finalNameIndex < (DOWNLOAD_NAMES.length - 1)) {  //if the download done is not the last one
+                            //we start the next download
+                            //long newDownloadId = downloader.downloadModel(DownloadFragment.DOWNLOAD_URLS[finalNameIndex + 1], DownloadFragment.DOWNLOAD_NAMES[finalNameIndex + 1]);
+                            //editor = sharedPreferences.edit();
+                            //editor.putLong("currentDownloadId", newDownloadId);
+                            //editor.apply();
+                        } else {
+                            //we notify the completion of the download of all models
+                            editor = sharedPreferences.edit();
+                            editor.putLong("currentDownloadId", -2);
+                            editor.apply();
+
+                            //startRTranslator();
+                        }
+                    }
+
+                    @Override
+                    public void onFailure() {
+                        //we save the failure of the transfer
+                        SharedPreferences.Editor editor = sharedPreferences.edit();
+                        editor.putString("lastTransferFailure", DOWNLOAD_NAMES[finalNameIndex]);
+                        editor.apply();
+                    }
+                });
+    	}//for
+    }
+
+    //private void startRTranslator(){
+    //    if (activity != null) {
+    //        //modification of the firstStart
+    //        global.setFirstStart(false);
+    //        //start activity
+    //        Intent intent = new Intent(activity, LoadingActivity.class);
+    //        intent.putExtra("activity", "download");
+    //        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+    //        activity.startActivity(intent);
+    //        activity.finish();
+    //    }
+    //}
+    	
     private void showAgeTermsError() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this.activity);
         builder.setMessage(R.string.error_age_unchecked);
