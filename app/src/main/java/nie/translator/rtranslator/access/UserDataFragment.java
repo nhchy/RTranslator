@@ -40,8 +40,11 @@ import java.util.ArrayList;
 import nie.translator.rtranslator.Global;
 import nie.translator.rtranslator.R;
 import nie.translator.rtranslator.bluetooth.tools.BluetoothTools;
-import nie.translator.rtranslator.tools.FileTools;
 
+import android.content.SharedPreferences;
+import android.content.Context;
+import java.io.File;
+import nie.translator.rtranslator.tools.FileTools;
 
 public class UserDataFragment extends Fragment {
     private ImageView imageView;
